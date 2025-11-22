@@ -1,55 +1,64 @@
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telebot import TeleBot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 TOKEN = os.getenv("BOT_TOKEN")
+bot = TeleBot(TOKEN)
 
-# ----- /start -----
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 Vítej v Hodinovka_bot!\n\n"
-        "/startwork – začít měřit\n"
-        "/endwork – ukončit měření\n"
-        "/today – dnešní hodiny\n"
-        "/week – týdenní přehled\n"
-        "/month – měsíční přehled\n"
-        "/year – roční přehled"
+# -------------------- MENU --------------------
+
+@bot.message_handler(commands=['start', 'menu'])
+def main_menu(msg):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row(
+        KeyboardButton("📝 Nový záznam"),
+        KeyboardButton("📊 Moje hodiny")
+    )
+    bot.send_message(msg.chat.id, "Vyber akci:", reply_markup=markup)
+
+# -------------------- NOVÝ ZÁZNAM --------------------
+
+@bot.message_handler(func=lambda m: m.text == "📝 Nový záznam")
+def start_new(msg):
+
+    start_markup = InlineKeyboardMarkup()
+
+    start_markup.row(
+        InlineKeyboardButton("6:00", callback_data="start_6:00"),
+        InlineKeyboardButton("6:30", callback_data="start_6:30"),
     )
 
-# ----- Placeholder funkce -----
-async def startwork(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🟢 Začal jsi měřit čas.")
+    start_markup.row(
+        InlineKeyboardButton("7:00", callback_data="start_7:00"),
+        InlineKeyboardButton("7:30", callback_data="start_7:30"),
+    )
 
-async def endwork(update: Update, Context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔴 Ukončil jsi měření.")
+    start_markup.row(
+        InlineKeyboardButton("Vlastní čas", callback_data="start_custom"),
+    )
 
-async def today(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📅 Dnes: 0 hodin (zatím neimplementováno).")
+    bot.send_message(msg.chat.id, "⏱ Vyber začátek práce:", reply_markup=start_markup)
 
-async def week(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📆 Tento týden: 0 hodin (zatím neimplementováno).")
+# -------------------- CALLBACK --------------------
 
-async def month(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📅 Tento měsíc: 0 hodin (zatím neimplementováno).")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("start_"))
+def handle_start_time(call):
+    selected = call.data.replace("start_", "")
 
-async def year(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📅 Tento rok: 0 hodin (zatím neimplementováno).")
+    if selected == "custom":
+        bot.send_message(call.message.chat.id, "Napiš vlastní čas ve formátu HH:MM")
+        bot.register_next_step_handler(call.message, save_custom_start)
+        return
 
-# ----- spuštění aplikace -----
-async def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, f"🕒 Začátek práce: {selected}")
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("startwork", startwork))
-    app.add_handler(CommandHandler("endwork", endwork))
-    app.add_handler(CommandHandler("today", today))
-    app.add_handler(CommandHandler("week", week))
-    app.add_handler(CommandHandler("month", month))
-    app.add_handler(CommandHandler("year", year))
+def save_custom_start(msg):
+    custom_time = msg.text.strip()
+    bot.send_message(msg.chat.id, f"🕒 Začátek práce: {custom_time}")
 
-    print("Bot běží…")
-    await app.run_polling()
+# -------------------- SPUŠTĚNÍ BOTA --------------------
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    print("Bot běží…")
+    bot.infinity_polling()
