@@ -1,6 +1,9 @@
-from telegram.ext import ApplicationBuilder, CommandHandler
-from db import start_session, end_session, get_today, get_week, get_month, get_year
-from config import TOKEN
+import os
+from telebot import TeleBot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+
+TOKEN = os.getenv("BOT_TOKEN")
+bot = TeleBot(TOKEN)
 
 async def start(update, context):
     await update.message.reply_text(
