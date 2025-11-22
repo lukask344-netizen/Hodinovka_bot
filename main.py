@@ -5,7 +5,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
 
-# -------------------- MENU --------------------
+# ---------------- MENU ----------------
 
 @bot.message_handler(commands=['start', 'menu'])
 def main_menu(msg):
@@ -16,48 +16,31 @@ def main_menu(msg):
     )
     bot.send_message(msg.chat.id, "Vyber akci:", reply_markup=markup)
 
-# -------------------- NOVÝ ZÁZNAM --------------------
+# ---------------- NOVÝ ZÁZNAM ----------------
 
 @bot.message_handler(func=lambda m: m.text == "📝 Nový záznam")
 def start_new(msg):
-
     start_markup = InlineKeyboardMarkup()
 
     start_markup.row(
-        InlineKeyboardButton("6:00", callback_data="start_6:00"),
-        InlineKeyboardButton("6:30", callback_data="start_6:30"),
+        InlineKeyboardButton("6:00", callback_data="start_6"),
+        InlineKeyboardButton("6:30", callback_data="start_630")
     )
-
     start_markup.row(
-        InlineKeyboardButton("7:00", callback_data="start_7:00"),
-        InlineKeyboardButton("7:30", callback_data="start_7:30"),
+        InlineKeyboardButton("7:00", callback_data="start_7"),
+        InlineKeyboardButton("7:30", callback_data="start_730")
     )
 
-    start_markup.row(
-        InlineKeyboardButton("Vlastní čas", callback_data="start_custom"),
-    )
+    bot.send_message(msg.chat.id, "Vyber čas začátku:", reply_markup=start_markup)
 
-    bot.send_message(msg.chat.id, "⏱ Vyber začátek práce:", reply_markup=start_markup)
+# ---------------- CALLBACK ----------------
 
-# -------------------- CALLBACK --------------------
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("start_"))
-def handle_start_time(call):
-    selected = call.data.replace("start_", "")
-
-    if selected == "custom":
-        bot.send_message(call.message.chat.id, "Napiš vlastní čas ve formátu HH:MM")
-        bot.register_next_step_handler(call.message, save_custom_start)
-        return
-
+@bot.callback_query_handler(func=lambda call: True)
+def callback(call):
     bot.answer_callback_query(call.id)
-    bot.send_message(call.message.chat.id, f"🕒 Začátek práce: {selected}")
+    bot.send_message(call.message.chat.id, f"Zaznamenáno: {call.data}")
 
-def save_custom_start(msg):
-    custom_time = msg.text.strip()
-    bot.send_message(msg.chat.id, f"🕒 Začátek práce: {custom_time}")
-
-# -------------------- SPUŠTĚNÍ BOTA --------------------
+# ---------------- START BOT ----------------
 
 if __name__ == "__main__":
     print("Bot běží…")
