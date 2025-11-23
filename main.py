@@ -1,32 +1,19 @@
-import os
-from flask import Flask, request
 import telebot
 
-TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(TOKEN, threaded=False)
-
-app = Flask(__name__)
-
-@app.route('/' + TOKEN, methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "OK", 200
-
-@app.route('/', methods=['GET'])
-def index():
-    return "Bot běží!", 200
-
-# ----------------- MENU -----------------
+# TVŮJ TOKEN
+bot = telebot.TeleBot("8547107810:AAFgSVRtmEFAhj3ux7vDfqK-xwQVEYKFfSs")
 
 @bot.message_handler(commands=['start'])
 def start(msg):
-    bot.reply_to(msg, "Bot běží ✔️")
+bot.reply_to(msg, "👋 Bot běží!\nPoužij příkazy:\n/startwork – začít práci\n/endwork – ukončit práci")
 
-# --------------------- START BOT ---------------------
+@bot.message_handler(commands=['startwork'])
+def startwork(msg):
+bot.reply_to(msg, "🏁 Začal jsi pracovat.")
 
-if __name__ == "__main__":
-    bot.remove_webhook()
-    bot.set_webhook(url=f"{os.getenv('RENDER_URL')}/{TOKEN}")
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+@bot.message_handler(commands=['endwork'])
+def endwork(msg):
+bot.reply_to(msg, "⛔ Ukončil jsi práci.")
+
+print("BOT BĚŽÍ…")
+bot.infinity_polling()
